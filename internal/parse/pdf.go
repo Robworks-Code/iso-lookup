@@ -2,6 +2,7 @@ package parse
 
 import (
 	"bytes"
+	"path/filepath"
 	"strings"
 
 	"github.com/ledongthuc/pdf"
@@ -20,7 +21,7 @@ func parsePDF(path string) (Document, error) {
 		buf.ReadFrom(rd)
 	}
 	raw := buf.String()
-	doc := Document{Raw: raw}
+	doc := Document{Raw: raw, Title: filepath.Base(path)}
 	if strings.TrimSpace(raw) == "" {
 		doc.Sections = []Section{{
 			Title: "Full text not extractable",

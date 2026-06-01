@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ringo380/iso-lookup/internal/docmodel"
 	"golang.org/x/net/html"
 )
 
@@ -40,7 +41,7 @@ func parseHTML(path string) (Document, error) {
 				flat = append(flat, Section{Number: num, Title: ttl})
 				cur = len(flat) - 1
 				return
-			case "p", "li", "div":
+			case "p", "li":
 				if cur >= 0 {
 					t := strings.TrimSpace(textOf(n))
 					if t != "" {
@@ -62,7 +63,7 @@ func parseHTML(path string) (Document, error) {
 	if len(flat) == 0 {
 		doc.Sections = []Section{{Body: strings.TrimSpace(doc.Raw)}}
 	} else {
-		doc.Sections = nestByNumber(flat)
+		doc.Sections = docmodel.Nest(flat)
 	}
 	return doc, nil
 }

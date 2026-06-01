@@ -29,7 +29,7 @@ func Summary(r catalog.Record) string {
 		fmt.Fprintf(&b, "Replaces:   %s\n", r.Replaces)
 	}
 	if r.ReplacedBy != "" {
-		fmt.Fprintf(&b, "Replaced by:%s\n", r.ReplacedBy)
+		fmt.Fprintf(&b, "Replaced by: %s\n", r.ReplacedBy)
 	}
 	if r.Pages > 0 {
 		fmt.Fprintf(&b, "Pages:      %d\n", r.Pages)

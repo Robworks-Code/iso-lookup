@@ -28,3 +28,17 @@ func TestSectionsNoStructureFallback(t *testing.T) {
 		t.Fatalf("expected single fallback section, got %+v", secs)
 	}
 }
+
+func TestSectionsNormativeReferences(t *testing.T) {
+	raw := "Normative references\n\nISO 9000, Quality management systems — Fundamentals and vocabulary.\n\n1 Scope\n\nThis standard applies."
+	secs := Sections(raw)
+	var hasNorm bool
+	for _, s := range secs {
+		if s.Title == "Normative references" {
+			hasNorm = true
+		}
+	}
+	if !hasNorm {
+		t.Fatalf("Normative references section not detected (%+v)", secs)
+	}
+}
