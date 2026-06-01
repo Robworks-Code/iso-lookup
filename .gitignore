@@ -21,3 +21,6 @@ coverage.*
 *.jsonl
 *.parquet
 catalog.gob
+
+# ...but always keep test fixtures
+!**/testdata/**
