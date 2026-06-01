@@ -9,6 +9,28 @@ import (
 	"strings"
 )
 
+// flexString unmarshals a JSON value that may be either a string or an array
+// of strings (joins with ", ").
+type flexString string
+
+func (f *flexString) UnmarshalJSON(data []byte) error {
+	// try string first
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		*f = flexString(s)
+		return nil
+	}
+	// try array
+	var arr []string
+	if err := json.Unmarshal(data, &arr); err == nil {
+		*f = flexString(strings.Join(arr, ", "))
+		return nil
+	}
+	// null or unknown — leave empty
+	*f = ""
+	return nil
+}
+
 // rawDeliverable mirrors the Open Data deliverables JSONL shape.
 type rawDeliverable struct {
 	ID              int               `json:"id"`
@@ -20,8 +42,8 @@ type rawDeliverable struct {
 	ICSCode         []string          `json:"icsCode"`
 	OwnerCommittee  string            `json:"ownerCommittee"`
 	CurrentStage    int               `json:"currentStage"`
-	Replaces        string            `json:"replaces"`
-	ReplacedBy      string            `json:"replacedBy"`
+	Replaces        flexString        `json:"replaces"`
+	ReplacedBy      flexString        `json:"replacedBy"`
 	Pages           map[string]*int   `json:"pages"`
 }
 
@@ -70,8 +92,8 @@ func toRecord(d rawDeliverable, com, ics map[string]string) Record {
 		PublishedDate: d.PublicationDate,
 		StageCode:     d.CurrentStage,
 		Status:        StageLabel(d.CurrentStage),
-		Replaces:      d.Replaces,
-		ReplacedBy:    d.ReplacedBy,
+		Replaces:      string(d.Replaces),
+		ReplacedBy:    string(d.ReplacedBy),
 		ID:            d.ID,
 		URL:           fmt.Sprintf("https://www.iso.org/standard/%d.html", d.ID),
 	}
@@ -114,6 +136,7 @@ func parseICS(rd io.Reader) (map[string]string, error) {
 	out := map[string]string{}
 	r := csv.NewReader(rd)
 	r.FieldsPerRecord = -1
+	r.LazyQuotes = true
 	rows, err := r.ReadAll()
 	if err != nil {
 		return nil, err
