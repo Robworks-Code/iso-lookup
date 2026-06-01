@@ -5,6 +5,7 @@ import (
 	"github.com/ringo380/iso-lookup/internal/config"
 	"github.com/ringo380/iso-lookup/internal/library"
 	"github.com/ringo380/iso-lookup/internal/parse"
+	"github.com/ringo380/iso-lookup/internal/tui"
 )
 
 func loadCatalog() (*catalog.Catalog, error) {
@@ -35,5 +36,6 @@ func limit(recs []catalog.Record, n int) []catalog.Record {
 	return recs
 }
 
-// runTUI is a temporary stub; Task 16 replaces it with the real TUI launcher.
-func runTUI(rec catalog.Record, doc parse.Document) error { return nil }
+func runTUI(rec catalog.Record, doc parse.Document) error {
+	return tui.Run(rec, doc)
+}
