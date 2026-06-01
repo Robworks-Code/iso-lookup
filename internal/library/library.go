@@ -55,15 +55,54 @@ func (l *Library) Find(ref string) (string, bool) {
 	if err != nil {
 		return "", false
 	}
+
+	// First pass: exact canonical match.
 	for _, e := range entries {
 		if e.IsDir() {
 			continue
 		}
 		name := e.Name()
 		stem := strings.TrimSuffix(name, filepath.Ext(name))
-		if canon(stem) == want || strings.Contains(want, canon(stem)) || strings.Contains(canon(stem), want) {
+		if canon(stem) == want {
 			return filepath.Join(l.docsDir, name), true
 		}
 	}
-	return "", false
+
+	// Second pass: collect substring-containment candidates and pick the most
+	// specific (longest canon(stem)), breaking ties by shortest filename then
+	// lexical order. Require canon(stem) length >= 4 to avoid junk matches.
+	type candidate struct {
+		name     string
+		stemLen  int
+		nameLen  int
+	}
+	var candidates []candidate
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		stem := strings.TrimSuffix(name, filepath.Ext(name))
+		cs := canon(stem)
+		if len(cs) < 4 {
+			continue
+		}
+		if strings.Contains(want, cs) || strings.Contains(cs, want) {
+			candidates = append(candidates, candidate{name: name, stemLen: len(cs), nameLen: len(name)})
+		}
+	}
+	if len(candidates) == 0 {
+		return "", false
+	}
+	best := candidates[0]
+	for _, c := range candidates[1:] {
+		if c.stemLen > best.stemLen {
+			best = c
+		} else if c.stemLen == best.stemLen {
+			if c.nameLen < best.nameLen || (c.nameLen == best.nameLen && c.name < best.name) {
+				best = c
+			}
+		}
+	}
+	return filepath.Join(l.docsDir, best.name), true
 }

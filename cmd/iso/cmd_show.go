@@ -27,7 +27,7 @@ var showCmd = &cobra.Command{
 		rec, ok := c.Lookup(args[0])
 		if !ok {
 			fmt.Fprintf(os.Stderr, "no exact match for %q; closest:\n", args[0])
-			fmt.Print(render.SearchList(limit(c.Search(args[0]), 10)))
+			fmt.Fprint(os.Stderr, render.SearchList(limit(c.Search(args[0]), 10)))
 			return fmt.Errorf("not found")
 		}
 		if showJSON {

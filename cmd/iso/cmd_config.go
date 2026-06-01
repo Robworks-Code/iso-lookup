@@ -25,7 +25,10 @@ var configSetDocs = &cobra.Command{
 	Short: "Set the local docs folder",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, _ := config.Load()
+		c, err := config.Load()
+		if err != nil {
+			return err
+		}
 		c.DocsDir = args[0]
 		return config.Save(c)
 	},
@@ -36,7 +39,10 @@ var configSetIndex = &cobra.Command{
 	Short: "Set the optional index.yaml override file",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, _ := config.Load()
+		c, err := config.Load()
+		if err != nil {
+			return err
+		}
 		c.IndexFile = args[0]
 		return config.Save(c)
 	},
@@ -47,7 +53,10 @@ var configSetPager = &cobra.Command{
 	Short: "Set the pager (e.g. less); empty disables paging",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, _ := config.Load()
+		c, err := config.Load()
+		if err != nil {
+			return err
+		}
 		c.Pager = args[0]
 		return config.Save(c)
 	},

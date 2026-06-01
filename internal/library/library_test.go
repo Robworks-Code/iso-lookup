@@ -28,6 +28,17 @@ func TestFindByConventionBareNumber(t *testing.T) {
 	}
 }
 
+func TestFindPrefersMostSpecific(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "iso.pdf"), []byte("x"), 0o644)            // junk short stem
+	os.WriteFile(filepath.Join(dir, "ISO-IEC-27001-2022.pdf"), []byte("x"), 0o644)
+	lib := New(dir, "")
+	got, ok := lib.Find("ISO/IEC 27001:2022")
+	if !ok || filepath.Base(got) != "ISO-IEC-27001-2022.pdf" {
+		t.Fatalf("expected specific match, got %q ok=%v", got, ok)
+	}
+}
+
 func TestIndexOverridesConvention(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "ISO-IEC-27001-2022.pdf"), []byte("x"), 0o644)
