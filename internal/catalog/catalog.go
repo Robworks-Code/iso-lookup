@@ -36,6 +36,30 @@ func isDerivative(ref string) bool {
 	return strings.Contains(lower, "/amd") || strings.Contains(lower, "/cor")
 }
 
+// numberMatches reports whether num is the standard-number component of ref.
+// It requires that the digit run is not adjacent to another digit on either
+// side, so "9001" does not match inside "29001".
+func numberMatches(ref, num string) bool {
+	idx := 0
+	for {
+		i := strings.Index(ref[idx:], num)
+		if i < 0 {
+			return false
+		}
+		pos := idx + i
+		before := pos - 1
+		after := pos + len(num)
+		okBefore := before < 0 || !isDigit(ref[before])
+		okAfter := after >= len(ref) || !isDigit(ref[after])
+		if okBefore && okAfter {
+			return true
+		}
+		idx = pos + 1
+	}
+}
+
+func isDigit(b byte) bool { return b >= '0' && b <= '9' }
+
 // Lookup resolves a reference exactly, then loosely. For a bare number it
 // prefers the base standard over amendments/corrigenda, then the non-replaced
 // (current) edition, then the most recent by reference string.
@@ -49,7 +73,7 @@ func (c *Catalog) Lookup(ref string) (Record, bool) {
 	}
 	var matches []Record
 	for _, r := range c.records {
-		if strings.Contains(r.Reference, m) {
+		if numberMatches(r.Reference, m) {
 			matches = append(matches, r)
 		}
 	}

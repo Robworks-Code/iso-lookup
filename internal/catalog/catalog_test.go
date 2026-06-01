@@ -51,6 +51,27 @@ func TestLookupBareNumberPrefersBaseOverAmendment(t *testing.T) {
 	}
 }
 
+func TestLookupBareNumberWordBoundary(t *testing.T) {
+	c := New([]Record{
+		{Reference: "ISO 9001:2015", ReplacedBy: ""},
+		{Reference: "ISO/TS 29001:2010", ReplacedBy: ""},
+	})
+	r, ok := c.Lookup("9001")
+	if !ok {
+		t.Fatal("not found")
+	}
+	if r.Reference != "ISO 9001:2015" {
+		t.Fatalf("bare 9001 should match ISO 9001:2015, not %q", r.Reference)
+	}
+}
+
+func TestLookupBareNumberHyphenated(t *testing.T) {
+	c := New([]Record{{Reference: "ISO 80000-1:2022", ReplacedBy: ""}})
+	if _, ok := c.Lookup("80000"); !ok {
+		t.Fatal("80000 should match ISO 80000-1:2022")
+	}
+}
+
 func TestSearchRanksReferenceThenTitleThenScope(t *testing.T) {
 	c := newTestCatalog()
 	res := c.Search("management")
