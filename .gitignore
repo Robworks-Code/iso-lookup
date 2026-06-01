@@ -1,0 +1,22 @@
+# Claude Code / local tooling (never commit)
+CLAUDE.md
+**/CLAUDE.md
+.claude/
+memory/
+.browser-pilot/
+.plugin-config/
+
+# Go
+/iso
+/dist/
+*.test
+*.out
+coverage.*
+
+# OS
+.DS_Store
+
+# Local cache / downloaded datasets
+*.jsonl
+*.parquet
+catalog.gob
