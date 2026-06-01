@@ -29,6 +29,12 @@ func normalize(s string) string {
 
 var reBareNum = regexp.MustCompile(`(\d{3,5})`)
 
+// isPublished reports whether a stage code represents a published or confirmed
+// standard (ISO harmonized stage groups 60 = Published and 90 = Review/Confirmed).
+// Both groups represent currently effective standards, as opposed to drafts
+// (stages 10–50) or withdrawn standards (stage 95).
+func isPublished(code int) bool { g := code / 100; return g == 60 || g == 90 }
+
 // isDerivative reports whether ref is an amendment, corrigendum, or similar
 // derivative document (e.g. "/Amd 1:2024", "/Cor 1:2009").
 func isDerivative(ref string) bool {
@@ -85,9 +91,13 @@ func (c *Catalog) Lookup(ref string) (Record, bool) {
 		if da != db {
 			return !da // non-derivative ranks first
 		}
+		pa, pb := isPublished(matches[a].StageCode), isPublished(matches[b].StageCode)
+		if pa != pb {
+			return pa // published ranks first
+		}
 		ca, cb := matches[a].ReplacedBy == "", matches[b].ReplacedBy == ""
 		if ca != cb {
-			return ca
+			return ca // current edition ranks first
 		}
 		return matches[a].Reference > matches[b].Reference
 	})

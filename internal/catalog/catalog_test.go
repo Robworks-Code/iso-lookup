@@ -72,6 +72,21 @@ func TestLookupBareNumberHyphenated(t *testing.T) {
 	}
 }
 
+func TestLookupBareNumberPrefersPublishedOverDraft(t *testing.T) {
+	c := New([]Record{
+		{Reference: "ISO/FDIS 9001", StageCode: 5000, ReplacedBy: ""},
+		{Reference: "ISO 9001:2015", StageCode: 6060, ReplacedBy: ""},
+		{Reference: "ISO/NP 9001", StageCode: 1020, ReplacedBy: ""},
+	})
+	r, ok := c.Lookup("9001")
+	if !ok {
+		t.Fatal("not found")
+	}
+	if r.Reference != "ISO 9001:2015" {
+		t.Fatalf("expected published ISO 9001:2015, got %q", r.Reference)
+	}
+}
+
 func TestSearchRanksReferenceThenTitleThenScope(t *testing.T) {
 	c := newTestCatalog()
 	res := c.Search("management")
