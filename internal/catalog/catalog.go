@@ -29,8 +29,16 @@ func normalize(s string) string {
 
 var reBareNum = regexp.MustCompile(`(\d{3,5})`)
 
+// isDerivative reports whether ref is an amendment, corrigendum, or similar
+// derivative document (e.g. "/Amd 1:2024", "/Cor 1:2009").
+func isDerivative(ref string) bool {
+	lower := strings.ToLower(ref)
+	return strings.Contains(lower, "/amd") || strings.Contains(lower, "/cor")
+}
+
 // Lookup resolves a reference exactly, then loosely. For a bare number it
-// prefers the non-replaced (current) edition.
+// prefers the base standard over amendments/corrigenda, then the non-replaced
+// (current) edition, then the most recent by reference string.
 func (c *Catalog) Lookup(ref string) (Record, bool) {
 	if i, ok := c.byRef[normalize(ref)]; ok {
 		return c.records[i], true
@@ -49,6 +57,10 @@ func (c *Catalog) Lookup(ref string) (Record, bool) {
 		return Record{}, false
 	}
 	sort.SliceStable(matches, func(a, b int) bool {
+		da, db := isDerivative(matches[a].Reference), isDerivative(matches[b].Reference)
+		if da != db {
+			return !da // non-derivative ranks first
+		}
 		ca, cb := matches[a].ReplacedBy == "", matches[b].ReplacedBy == ""
 		if ca != cb {
 			return ca

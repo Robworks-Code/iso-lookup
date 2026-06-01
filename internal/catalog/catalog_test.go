@@ -36,6 +36,21 @@ func TestLookupCaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestLookupBareNumberPrefersBaseOverAmendment(t *testing.T) {
+	c := New([]Record{
+		{Reference: "ISO/IEC 27001:2022/Amd 1:2024", ReplacedBy: ""},
+		{Reference: "ISO/IEC 27001:2022", ReplacedBy: ""},
+		{Reference: "ISO/IEC 27001:2013", ReplacedBy: "ISO/IEC 27001:2022"},
+	})
+	r, ok := c.Lookup("27001")
+	if !ok {
+		t.Fatal("not found")
+	}
+	if r.Reference != "ISO/IEC 27001:2022" {
+		t.Fatalf("expected base standard, got %q", r.Reference)
+	}
+}
+
 func TestSearchRanksReferenceThenTitleThenScope(t *testing.T) {
 	c := newTestCatalog()
 	res := c.Search("management")
