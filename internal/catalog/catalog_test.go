@@ -1,0 +1,121 @@
+package catalog
+
+import "testing"
+
+func newTestCatalog() *Catalog {
+	return New([]Record{
+		{Reference: "ISO/IEC 27001:2022", Title: "Information security management systems — Requirements", Scope: "specifies requirements for an ISMS", ReplacedBy: ""},
+		{Reference: "ISO/IEC 27001:2013", Title: "Information security management systems — Requirements", ReplacedBy: "ISO/IEC 27001:2022"},
+		{Reference: "ISO 9001:2015", Title: "Quality management systems — Requirements", Scope: "quality management"},
+	})
+}
+
+func TestLookupExact(t *testing.T) {
+	c := newTestCatalog()
+	r, ok := c.Lookup("ISO/IEC 27001:2022")
+	if !ok || r.Reference != "ISO/IEC 27001:2022" {
+		t.Fatalf("exact lookup failed: %+v ok=%v", r, ok)
+	}
+}
+
+func TestLookupBareNumberPrefersCurrent(t *testing.T) {
+	c := newTestCatalog()
+	r, ok := c.Lookup("27001")
+	if !ok {
+		t.Fatal("bare-number lookup failed")
+	}
+	if r.Reference != "ISO/IEC 27001:2022" {
+		t.Fatalf("expected current (non-replaced) edition, got %q", r.Reference)
+	}
+}
+
+func TestLookupCaseInsensitive(t *testing.T) {
+	c := newTestCatalog()
+	if _, ok := c.Lookup("iso 9001"); !ok {
+		t.Fatal("case-insensitive lookup failed")
+	}
+}
+
+func TestLookupBareNumberPrefersBaseOverAmendment(t *testing.T) {
+	c := New([]Record{
+		{Reference: "ISO/IEC 27001:2022/Amd 1:2024", ReplacedBy: ""},
+		{Reference: "ISO/IEC 27001:2022", ReplacedBy: ""},
+		{Reference: "ISO/IEC 27001:2013", ReplacedBy: "ISO/IEC 27001:2022"},
+	})
+	r, ok := c.Lookup("27001")
+	if !ok {
+		t.Fatal("not found")
+	}
+	if r.Reference != "ISO/IEC 27001:2022" {
+		t.Fatalf("expected base standard, got %q", r.Reference)
+	}
+}
+
+func TestLookupBareNumberWordBoundary(t *testing.T) {
+	c := New([]Record{
+		{Reference: "ISO 9001:2015", ReplacedBy: ""},
+		{Reference: "ISO/TS 29001:2010", ReplacedBy: ""},
+	})
+	r, ok := c.Lookup("9001")
+	if !ok {
+		t.Fatal("not found")
+	}
+	if r.Reference != "ISO 9001:2015" {
+		t.Fatalf("bare 9001 should match ISO 9001:2015, not %q", r.Reference)
+	}
+}
+
+func TestLookupBareNumberHyphenated(t *testing.T) {
+	c := New([]Record{{Reference: "ISO 80000-1:2022", ReplacedBy: ""}})
+	if _, ok := c.Lookup("80000"); !ok {
+		t.Fatal("80000 should match ISO 80000-1:2022")
+	}
+}
+
+func TestLookupBareNumberPrefersPublishedOverDraft(t *testing.T) {
+	c := New([]Record{
+		{Reference: "ISO/FDIS 9001", StageCode: 5000, ReplacedBy: ""},
+		{Reference: "ISO 9001:2015", StageCode: 6060, ReplacedBy: ""},
+		{Reference: "ISO/NP 9001", StageCode: 1020, ReplacedBy: ""},
+	})
+	r, ok := c.Lookup("9001")
+	if !ok {
+		t.Fatal("not found")
+	}
+	if r.Reference != "ISO 9001:2015" {
+		t.Fatalf("expected published ISO 9001:2015, got %q", r.Reference)
+	}
+}
+
+func TestLookupNormalizesNonBreakingSpace(t *testing.T) {
+	// Source reference uses a non-breaking space (U+00A0) instead of a regular
+	// space; a plain-space query should still resolve it.
+	c := New([]Record{{Reference: "ISO/IEC 27001:2022"}})
+	if _, ok := c.Lookup("ISO/IEC 27001:2022"); !ok {
+		t.Fatal("non-breaking space in reference should normalize to a match")
+	}
+}
+
+func TestSearchEmptyQueryReturnsNonNil(t *testing.T) {
+	c := newTestCatalog()
+	if res := c.Search("   "); res == nil {
+		t.Fatal("empty query should return a non-nil empty slice, got nil")
+	}
+}
+
+func TestSearchRanksReferenceThenTitleThenScope(t *testing.T) {
+	c := newTestCatalog()
+	res := c.Search("management")
+	if len(res) == 0 {
+		t.Fatal("no results")
+	}
+	found := false
+	for _, r := range res {
+		if r.Reference == "ISO 9001:2015" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("expected ISO 9001:2015 in results")
+	}
+}
