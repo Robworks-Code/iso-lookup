@@ -2,14 +2,11 @@ package parse
 
 import (
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/ringo380/iso-lookup/internal/docmodel"
 	"golang.org/x/net/html"
 )
-
-var reHTMLNumber = regexp.MustCompile(`^([0-9]+(?:\.[0-9]+)*|[A-Z]\.[0-9]+(?:\.[0-9]+)*)\s+(.+)$`)
 
 func parseHTML(path string) (Document, error) {
 	b, err := os.ReadFile(path)
@@ -33,11 +30,7 @@ func parseHTML(path string) (Document, error) {
 				}
 				return
 			case "h2", "h3", "h4", "h5", "h6":
-				text := strings.TrimSpace(textOf(n))
-				num, ttl := "", text
-				if m := reHTMLNumber.FindStringSubmatch(text); m != nil {
-					num, ttl = m[1], strings.TrimSpace(m[2])
-				}
+				num, ttl := docmodel.SplitNumber(textOf(n))
 				flat = append(flat, Section{Number: num, Title: ttl})
 				cur = len(flat) - 1
 				return

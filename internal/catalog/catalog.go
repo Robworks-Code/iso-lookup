@@ -4,27 +4,50 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"unicode"
 )
 
 // Catalog provides offline lookup/search over loaded Records.
 type Catalog struct {
 	records []Record
 	byRef   map[string]int // normalized reference -> index
+	lower   []searchFields // per-record lowercased fields, parallel to records
 }
 
-// New builds a Catalog and its lookup index.
+// searchFields holds the lowercased fields scanned by Search, precomputed once
+// in New so each search does not re-lowercase the whole catalogue.
+type searchFields struct {
+	ref, title, scope string
+}
+
+// New builds a Catalog and its lookup/search indexes.
 func New(recs []Record) *Catalog {
-	c := &Catalog{records: recs, byRef: make(map[string]int, len(recs))}
+	c := &Catalog{
+		records: recs,
+		byRef:   make(map[string]int, len(recs)),
+		lower:   make([]searchFields, len(recs)),
+	}
 	for i, r := range recs {
 		c.byRef[normalize(r.Reference)] = i
+		c.lower[i] = searchFields{
+			ref:   strings.ToLower(r.Reference),
+			title: strings.ToLower(r.Title),
+			scope: strings.ToLower(r.Scope),
+		}
 	}
 	return c
 }
 
+// normalize lowercases s and strips all whitespace (including non-breaking
+// spaces and other Unicode space variants) so references compare equal
+// regardless of the spacing used by the source data or the user's query.
 func normalize(s string) string {
-	s = strings.ToLower(strings.TrimSpace(s))
-	s = strings.ReplaceAll(s, " ", "")
-	return s
+	return strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) {
+			return -1
+		}
+		return unicode.ToLower(r)
+	}, s)
 }
 
 var reBareNum = regexp.MustCompile(`(\d{3,5})`)
@@ -87,21 +110,31 @@ func (c *Catalog) Lookup(ref string) (Record, bool) {
 		return Record{}, false
 	}
 	sort.SliceStable(matches, func(a, b int) bool {
-		da, db := isDerivative(matches[a].Reference), isDerivative(matches[b].Reference)
-		if da != db {
-			return !da // non-derivative ranks first
-		}
-		pa, pb := isPublished(matches[a].StageCode), isPublished(matches[b].StageCode)
-		if pa != pb {
-			return pa // published ranks first
-		}
-		ca, cb := matches[a].ReplacedBy == "", matches[b].ReplacedBy == ""
-		if ca != cb {
-			return ca // current edition ranks first
+		ra, rb := lookupRank(matches[a]), lookupRank(matches[b])
+		if ra != rb {
+			return ra < rb // lower rank sorts first
 		}
 		return matches[a].Reference > matches[b].Reference
 	})
 	return matches[0], true
+}
+
+// lookupRank orders bare-number candidates: base standards before
+// amendments/corrigenda, published before drafts, current before replaced.
+// Lower values sort first; each criterion is weighted so a more important
+// criterion always dominates a less important one.
+func lookupRank(r Record) int {
+	rank := 0
+	if isDerivative(r.Reference) {
+		rank += 4
+	}
+	if !isPublished(r.StageCode) {
+		rank += 2
+	}
+	if r.ReplacedBy != "" {
+		rank += 1
+	}
+	return rank
 }
 
 // Search returns records matching all query tokens, ranked
@@ -109,26 +142,24 @@ func (c *Catalog) Lookup(ref string) (Record, bool) {
 func (c *Catalog) Search(query string) []Record {
 	tokens := strings.Fields(strings.ToLower(query))
 	if len(tokens) == 0 {
-		return nil
+		return []Record{}
 	}
 	type scored struct {
 		r     Record
 		score int
 	}
 	var hits []scored
-	for _, r := range c.records {
-		ref := strings.ToLower(r.Reference)
-		title := strings.ToLower(r.Title)
-		scope := strings.ToLower(r.Scope)
+	for i, r := range c.records {
+		f := c.lower[i]
 		ok := true
 		score := 0
 		for _, tok := range tokens {
 			switch {
-			case strings.Contains(ref, tok):
+			case strings.Contains(f.ref, tok):
 				score += 3
-			case strings.Contains(title, tok):
+			case strings.Contains(f.title, tok):
 				score += 2
-			case strings.Contains(scope, tok):
+			case strings.Contains(f.scope, tok):
 				score += 1
 			default:
 				ok = false

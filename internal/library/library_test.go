@@ -30,12 +30,29 @@ func TestFindByConventionBareNumber(t *testing.T) {
 
 func TestFindPrefersMostSpecific(t *testing.T) {
 	dir := t.TempDir()
-	os.WriteFile(filepath.Join(dir, "iso.pdf"), []byte("x"), 0o644)            // junk short stem
+	os.WriteFile(filepath.Join(dir, "iso.pdf"), []byte("x"), 0o644) // junk short stem
 	os.WriteFile(filepath.Join(dir, "ISO-IEC-27001-2022.pdf"), []byte("x"), 0o644)
 	lib := New(dir, "")
 	got, ok := lib.Find("ISO/IEC 27001:2022")
 	if !ok || filepath.Base(got) != "ISO-IEC-27001-2022.pdf" {
 		t.Fatalf("expected specific match, got %q ok=%v", got, ok)
+	}
+}
+
+func TestIndexRejectsTraversal(t *testing.T) {
+	dir := t.TempDir()
+	// A legitimate convention file exists; the malicious index entry must not
+	// override it with an escaping path.
+	os.WriteFile(filepath.Join(dir, "ISO-IEC-27001-2022.pdf"), []byte("x"), 0o644)
+	idx := filepath.Join(dir, "index.yaml")
+	os.WriteFile(idx, []byte("entries:\n  \"ISO/IEC 27001:2022\": ../../../etc/passwd\n"), 0o644)
+	lib := New(dir, idx)
+	got, ok := lib.Find("ISO/IEC 27001:2022")
+	if !ok {
+		t.Fatal("expected fall-through to convention match")
+	}
+	if filepath.Base(got) != "ISO-IEC-27001-2022.pdf" {
+		t.Fatalf("traversal entry should be rejected; got %q", got)
 	}
 }
 

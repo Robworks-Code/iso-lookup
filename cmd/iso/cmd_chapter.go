@@ -51,13 +51,16 @@ var chapterCmd = &cobra.Command{
 }
 
 func page(text string) error {
-	cfg, _ := config.Load()
-	pager := cfg.Pager
-	if noPager || pager == "" {
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+	fields := strings.Fields(cfg.Pager)
+	if noPager || len(fields) == 0 {
 		fmt.Print(text)
 		return nil
 	}
-	c := exec.Command(pager)
+	c := exec.Command(fields[0], fields[1:]...)
 	c.Stdin = strings.NewReader(text)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr

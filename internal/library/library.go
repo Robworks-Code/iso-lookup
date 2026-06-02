@@ -24,6 +24,21 @@ type indexFileShape struct {
 	Entries map[string]string `yaml:"entries"`
 }
 
+// resolveEntry resolves an index-file path value against docsDir. Absolute
+// paths are accepted as-is (the user controls their own index file); relative
+// paths are joined to docsDir and rejected if they escape it via "..".
+func (l *Library) resolveEntry(v string) (string, bool) {
+	if filepath.IsAbs(v) {
+		return v, true
+	}
+	joined := filepath.Join(l.docsDir, v)
+	rel, err := filepath.Rel(l.docsDir, joined)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", false
+	}
+	return joined, true
+}
+
 var reNonAlnum = regexp.MustCompile(`[^a-z0-9]+`)
 
 func canon(s string) string {
@@ -41,10 +56,10 @@ func (l *Library) Find(ref string) (string, bool) {
 			if yaml.Unmarshal(b, &idx) == nil {
 				for k, v := range idx.Entries {
 					if canon(k) == canon(ref) {
-						if filepath.IsAbs(v) {
-							return v, true
+						if p, ok := l.resolveEntry(v); ok {
+							return p, true
 						}
-						return filepath.Join(l.docsDir, v), true
+						// Unsafe/traversing entry: fall through to convention scan.
 					}
 				}
 			}
@@ -72,9 +87,9 @@ func (l *Library) Find(ref string) (string, bool) {
 	// specific (longest canon(stem)), breaking ties by shortest filename then
 	// lexical order. Require canon(stem) length >= 4 to avoid junk matches.
 	type candidate struct {
-		name     string
-		stemLen  int
-		nameLen  int
+		name    string
+		stemLen int
+		nameLen int
 	}
 	var candidates []candidate
 	for _, e := range entries {

@@ -24,7 +24,6 @@ func Parse(path string) (Document, error) {
 }
 
 var reMDHeading = regexp.MustCompile(`^(#{1,6})\s+(.*)$`)
-var reMDNumber = regexp.MustCompile(`^([0-9]+(?:\.[0-9]+)*|[A-Z]\.[0-9]+(?:\.[0-9]+)*)\s+(.+)$`)
 
 func parseText(path string) (Document, error) {
 	b, err := os.ReadFile(path)
@@ -51,32 +50,12 @@ func firstHeading(raw string) string {
 }
 
 func sectionsFromMarkdown(raw string) []Section {
-	lines := strings.Split(raw, "\n")
-	var flat []Section
-	cur := -1
-	for _, line := range lines {
-		if m := reMDHeading.FindStringSubmatch(strings.TrimSpace(line)); m != nil {
-			text := strings.TrimSpace(m[2])
-			num, title := "", text
-			if nm := reMDNumber.FindStringSubmatch(text); nm != nil {
-				num, title = nm[1], strings.TrimSpace(nm[2])
-			}
-			flat = append(flat, Section{Number: num, Title: title})
-			cur = len(flat) - 1
-			continue
+	return docmodel.BuildSections(raw, func(line string) (string, string, bool) {
+		m := reMDHeading.FindStringSubmatch(strings.TrimSpace(line))
+		if m == nil {
+			return "", "", false
 		}
-		if cur >= 0 {
-			if flat[cur].Body != "" {
-				flat[cur].Body += "\n"
-			}
-			flat[cur].Body += line
-		}
-	}
-	for i := range flat {
-		flat[i].Body = strings.TrimSpace(flat[i].Body)
-	}
-	if len(flat) == 0 {
-		return []Section{{Body: strings.TrimSpace(raw)}}
-	}
-	return docmodel.Nest(flat)
+		num, title := docmodel.SplitNumber(m[2])
+		return num, title, true
+	})
 }

@@ -87,6 +87,22 @@ func TestLookupBareNumberPrefersPublishedOverDraft(t *testing.T) {
 	}
 }
 
+func TestLookupNormalizesNonBreakingSpace(t *testing.T) {
+	// Source reference uses a non-breaking space (U+00A0) instead of a regular
+	// space; a plain-space query should still resolve it.
+	c := New([]Record{{Reference: "ISO/IEC 27001:2022"}})
+	if _, ok := c.Lookup("ISO/IEC 27001:2022"); !ok {
+		t.Fatal("non-breaking space in reference should normalize to a match")
+	}
+}
+
+func TestSearchEmptyQueryReturnsNonNil(t *testing.T) {
+	c := newTestCatalog()
+	if res := c.Search("   "); res == nil {
+		t.Fatal("empty query should return a non-nil empty slice, got nil")
+	}
+}
+
 func TestSearchRanksReferenceThenTitleThenScope(t *testing.T) {
 	c := newTestCatalog()
 	res := c.Search("management")

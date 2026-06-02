@@ -20,28 +20,21 @@ type model struct {
 	height   int
 }
 
-type flat struct {
-	sec   parse.Section
-	depth int
-}
-
-func flatten(secs []parse.Section, depth int, out *[]flat) {
+// flatten appends each section depth-first, indenting its title by depth.
+func flatten(secs []parse.Section, depth int, out *[]parse.Section) {
 	for _, s := range secs {
-		*out = append(*out, flat{s, depth})
+		row := s
+		row.Title = strings.Repeat("  ", depth) + s.Title
+		row.Children = nil
+		*out = append(*out, row)
 		flatten(s.Children, depth+1, out)
 	}
 }
 
 // New builds the TUI model for a record + parsed document.
 func New(rec catalog.Record, doc parse.Document) model {
-	var rows []flat
-	flatten(doc.Sections, 0, &rows)
-	flatSecs := make([]parse.Section, len(rows))
-	for i, r := range rows {
-		s := r.sec
-		s.Title = strings.Repeat("  ", r.depth) + s.Title
-		flatSecs[i] = s
-	}
+	var flatSecs []parse.Section
+	flatten(doc.Sections, 0, &flatSecs)
 	return model{rec: rec, sections: flatSecs}
 }
 

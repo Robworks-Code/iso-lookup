@@ -2,7 +2,65 @@
 // parse and segment packages.
 package docmodel
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
+
+// reNumber matches a heading that begins with an ISO section number, e.g.
+// "4.2.1 Title" or "A.1 Title", capturing the number and the remaining title.
+var reNumber = regexp.MustCompile(`^([0-9]+(?:\.[0-9]+)*|[A-Z]\.[0-9]+(?:\.[0-9]+)*)\s+(.+)$`)
+
+// SplitNumber splits a heading line into its leading section number and title.
+// If the line has no leading section number, num is "" and title is the
+// trimmed input.
+func SplitNumber(text string) (num, title string) {
+	text = strings.TrimSpace(text)
+	if m := reNumber.FindStringSubmatch(text); m != nil {
+		return m[1], strings.TrimSpace(m[2])
+	}
+	return "", text
+}
+
+// IsNumberedHeading reports whether line is a standalone numbered heading and,
+// if so, returns its number and title.
+func IsNumberedHeading(line string) (num, title string, ok bool) {
+	if m := reNumber.FindStringSubmatch(strings.TrimSpace(line)); m != nil {
+		return m[1], strings.TrimSpace(m[2]), true
+	}
+	return "", "", false
+}
+
+// BuildSections runs the common flat-section accumulation loop over raw text.
+// detect is called per line; when it reports a heading, a new section starts
+// with the returned number/title, otherwise the line is appended to the
+// current section's body. The result is nested with Nest, or a single
+// whole-text section when no headings are found.
+func BuildSections(raw string, detect func(line string) (num, title string, ok bool)) []Section {
+	lines := strings.Split(raw, "\n")
+	var flat []Section
+	cur := -1
+	for _, line := range lines {
+		if num, title, ok := detect(line); ok {
+			flat = append(flat, Section{Number: num, Title: title})
+			cur = len(flat) - 1
+			continue
+		}
+		if cur >= 0 {
+			if flat[cur].Body != "" {
+				flat[cur].Body += "\n"
+			}
+			flat[cur].Body += line
+		}
+	}
+	for i := range flat {
+		flat[i].Body = strings.TrimSpace(flat[i].Body)
+	}
+	if len(flat) == 0 {
+		return []Section{{Body: strings.TrimSpace(raw)}}
+	}
+	return Nest(flat)
+}
 
 // Document is a parsed local standards file.
 type Document struct {
