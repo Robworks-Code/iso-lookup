@@ -22,7 +22,9 @@ func openCommand(goos, url string) (string, []string) {
 var openCmd = &cobra.Command{
 	Use:   "open <reference>",
 	Short: "Open the official ISO URL in your browser",
-	Args:  cobra.ExactArgs(1),
+	Example: `  iso open 27001
+  iso open ISO 9001:2015`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := loadCatalog()
 		if err != nil {

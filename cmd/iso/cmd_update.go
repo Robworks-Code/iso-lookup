@@ -13,6 +13,10 @@ import (
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Download/refresh the ISO Open Data metadata index",
+	Long: `Download the latest ISO Open Data catalogue and build the local index that
+search and show query offline. Run this once before first use and whenever you
+want fresh metadata. On failure the existing index is left untouched.`,
+	Example: `  iso update`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Println("Downloading ISO Open Data (this may take a moment)...")
 		client := &http.Client{Timeout: 5 * time.Minute}

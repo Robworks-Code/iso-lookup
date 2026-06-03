@@ -10,7 +10,12 @@ import (
 var browseCmd = &cobra.Command{
 	Use:   "browse <reference>",
 	Short: "Browse a standard interactively (TUI)",
-	Args:  cobra.ExactArgs(1),
+	Long: `Open an interactive, full-screen browser for a standard's sections. Requires
+a local copy of the full text. Navigate with the arrow keys (or j/k) and quit
+with q. Equivalent to "iso show <ref> --interactive".`,
+	Example: `  iso browse 27001
+  iso browse ISO/IEC 27001:2022`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := loadCatalog()
 		if err != nil {
