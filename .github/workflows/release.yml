@@ -22,6 +22,17 @@ jobs:
         with:
           go-version: stable
 
+      # Mint a short-lived (1h) token from the tap-publisher GitHub App so the
+      # brew cask can be pushed cross-repo without a long-lived PAT to rotate.
+      - name: Generate tap token
+        id: tap-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.TAP_APP_ID }}
+          private-key: ${{ secrets.TAP_APP_PRIVATE_KEY }}
+          owner: Robworks-Code
+          repositories: homebrew-tap
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -29,6 +40,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # PAT with contents:write on Robworks-Code/homebrew-tap so the brew
-          # formula can be pushed across repositories.
-          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ steps.tap-token.outputs.token }}
