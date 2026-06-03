@@ -1,0 +1,74 @@
+version: 2
+
+project_name: iso
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: iso
+    main: ./cmd/iso
+    binary: iso
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .ShortCommit }}
+      - -X main.date={{ .Date }}
+
+archives:
+  - id: iso
+    formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"
+      - "Merge branch"
+
+homebrew_casks:
+  - name: iso
+    repository:
+      owner: Robworks-Code
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Casks
+    homepage: "https://github.com/Robworks-Code/iso-lookup"
+    description: "CLI for ISO standards lookup via the official ISO Open Data catalogue"
+    license: "MIT"
+    commit_author:
+      name: goreleaser
+      email: goreleaser@users.noreply.github.com
+    # Strip the Gatekeeper quarantine flag so the unsigned binary runs without
+    # the "cannot be opened because the developer cannot be verified" prompt.
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/iso"]
+          end
+
+release:
+  github:
+    owner: Robworks-Code
+    name: iso-lookup
+  draft: false
+  prerelease: auto

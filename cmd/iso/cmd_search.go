@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ringo380/iso-lookup/internal/catalog"
-	"github.com/ringo380/iso-lookup/internal/render"
+	"github.com/Robworks-Code/iso-lookup/internal/catalog"
+	"github.com/Robworks-Code/iso-lookup/internal/render"
 	"github.com/spf13/cobra"
 )
 

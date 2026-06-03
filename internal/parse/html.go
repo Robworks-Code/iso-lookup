@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ringo380/iso-lookup/internal/docmodel"
+	"github.com/Robworks-Code/iso-lookup/internal/docmodel"
 	"golang.org/x/net/html"
 )
 

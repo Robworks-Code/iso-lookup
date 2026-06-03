@@ -3,8 +3,8 @@ package tui
 import (
 	"testing"
 
-	"github.com/ringo380/iso-lookup/internal/catalog"
-	"github.com/ringo380/iso-lookup/internal/parse"
+	"github.com/Robworks-Code/iso-lookup/internal/catalog"
+	"github.com/Robworks-Code/iso-lookup/internal/parse"
 )
 
 func TestNewFlattensSections(t *testing.T) {

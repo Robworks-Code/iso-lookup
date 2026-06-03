@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ringo380/iso-lookup/internal/catalog"
-	"github.com/ringo380/iso-lookup/internal/config"
+	"github.com/Robworks-Code/iso-lookup/internal/catalog"
+	"github.com/Robworks-Code/iso-lookup/internal/config"
 	"github.com/spf13/cobra"
 )
 

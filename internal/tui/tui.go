@@ -7,8 +7,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/ringo380/iso-lookup/internal/catalog"
-	"github.com/ringo380/iso-lookup/internal/parse"
+	"github.com/Robworks-Code/iso-lookup/internal/catalog"
+	"github.com/Robworks-Code/iso-lookup/internal/parse"
 )
 
 type model struct {

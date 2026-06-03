@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ringo380/iso-lookup/internal/docmodel"
-	"github.com/ringo380/iso-lookup/internal/segment"
+	"github.com/Robworks-Code/iso-lookup/internal/docmodel"
+	"github.com/Robworks-Code/iso-lookup/internal/segment"
 )
 
 // Parse reads a local file and returns a normalized Document, dispatching by

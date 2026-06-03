@@ -9,6 +9,7 @@ memory/
 
 # Go
 /iso
+/bin/
 /dist/
 *.test
 *.out
