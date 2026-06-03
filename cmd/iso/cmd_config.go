@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/ringo380/iso-lookup/internal/config"
+	"github.com/Robworks-Code/iso-lookup/internal/config"
 	"github.com/spf13/cobra"
 )
 

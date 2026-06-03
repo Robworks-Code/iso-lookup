@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ringo380/iso-lookup/internal/docmodel"
+	"github.com/Robworks-Code/iso-lookup/internal/docmodel"
 )
 
 // Section is an alias for the shared document section type.

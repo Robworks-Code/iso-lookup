@@ -7,7 +7,7 @@ import (
 
 	"github.com/ledongthuc/pdf"
 
-	"github.com/ringo380/iso-lookup/internal/segment"
+	"github.com/Robworks-Code/iso-lookup/internal/segment"
 )
 
 func parsePDF(path string) (Document, error) {

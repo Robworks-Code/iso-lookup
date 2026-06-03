@@ -1,7 +1,7 @@
 // Package parse reads local standards files and returns normalized Documents.
 package parse
 
-import "github.com/ringo380/iso-lookup/internal/docmodel"
+import "github.com/Robworks-Code/iso-lookup/internal/docmodel"
 
 // Document is a parsed local standards file.
 type Document = docmodel.Document

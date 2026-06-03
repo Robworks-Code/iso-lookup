@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ringo380/iso-lookup/internal/parse"
-	"github.com/ringo380/iso-lookup/internal/render"
+	"github.com/Robworks-Code/iso-lookup/internal/parse"
+	"github.com/Robworks-Code/iso-lookup/internal/render"
 	"github.com/spf13/cobra"
 )
 

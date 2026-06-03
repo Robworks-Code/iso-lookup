@@ -7,8 +7,29 @@ A CLI for looking up ISO security and standards documents.
 
 ## Install
 
+**Homebrew (macOS):**
+
 ```bash
-go build -o iso ./cmd/iso
+brew install Robworks-Code/tap/iso
+```
+
+**Go (any platform, needs Go 1.25+):**
+
+```bash
+go install github.com/Robworks-Code/iso-lookup/cmd/iso@latest
+```
+
+**Prebuilt binaries:** download a tarball for your OS/arch from the
+[releases page](https://github.com/Robworks-Code/iso-lookup/releases) and put
+`iso` on your `PATH`.
+
+**From source:**
+
+```bash
+make install            # builds and installs into /usr/local/bin (override PREFIX=...)
+# or
+make build              # builds ./bin/iso
+go install ./cmd/iso    # installs into $(go env GOPATH)/bin
 ```
 
 ## Usage

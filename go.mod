@@ -1,4 +1,4 @@
-module github.com/ringo380/iso-lookup
+module github.com/Robworks-Code/iso-lookup
 
 go 1.25.1
 

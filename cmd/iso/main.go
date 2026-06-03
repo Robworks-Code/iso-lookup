@@ -7,9 +7,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Build metadata, overridden via -ldflags at release time (see .goreleaser.yaml).
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 var rootCmd = &cobra.Command{
-	Use:   "iso",
-	Short: "Look up ISO security and standards documents",
+	Use:     "iso",
+	Version: version,
+	Short:   "Look up ISO security and standards documents",
 	Long: `iso looks up standards by keyword or reference, prints authoritative
 metadata from an offline copy of the ISO Open Data index, and reads full text
 from local files when you have them.
@@ -34,6 +42,7 @@ Standard body text is copyrighted and is only ever read from your own files.`,
 func main() {
 	rootCmd.SilenceErrors = true
 	rootCmd.SilenceUsage = true
+	rootCmd.SetVersionTemplate("iso {{.Version}} (" + commit + ", built " + date + ")\n")
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)

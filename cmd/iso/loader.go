@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/ringo380/iso-lookup/internal/catalog"
-	"github.com/ringo380/iso-lookup/internal/config"
-	"github.com/ringo380/iso-lookup/internal/library"
-	"github.com/ringo380/iso-lookup/internal/parse"
-	"github.com/ringo380/iso-lookup/internal/tui"
+	"github.com/Robworks-Code/iso-lookup/internal/catalog"
+	"github.com/Robworks-Code/iso-lookup/internal/config"
+	"github.com/Robworks-Code/iso-lookup/internal/library"
+	"github.com/Robworks-Code/iso-lookup/internal/parse"
+	"github.com/Robworks-Code/iso-lookup/internal/tui"
 )
 
 func loadCatalog() (*catalog.Catalog, error) {

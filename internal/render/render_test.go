@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ringo380/iso-lookup/internal/catalog"
+	"github.com/Robworks-Code/iso-lookup/internal/catalog"
 )
 
 func sample() catalog.Record {
