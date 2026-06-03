@@ -43,6 +43,7 @@ iso show <reference>             # metadata summary + table of contents
 iso chapter <reference> <sec>    # print one chapter from a local file
 iso open <reference>             # open the official ISO page
 iso browse <reference>           # interactive TUI
+iso scan [path]                  # detect a project's stack, recommend standards
 iso config set-docs <path>       # point at your local standards folder
 ```
 
@@ -58,6 +59,40 @@ entries:
 ```
 
 Point `iso` at your index file with `iso config set-index <path>`.
+
+## Scanning a project
+
+`iso scan` inspects a folder, detects its technology stack from marker files and
+dependency manifests, and recommends the current ISO standards relevant to what
+it finds — grouped into a report you can reshape.
+
+```bash
+iso scan .                       # detect stack + recommend standards (current dir)
+iso scan ./service               # scan another folder
+iso scan stack .                 # just the detected components, no recommendations
+iso scan why security .          # explain what drove a component/category/concern
+```
+
+Detection reads markers like `go.mod`, `package.json`, `Dockerfile`, `*.tf`, and
+CI configs (and, where present, their dependency lists) and maps them to concerns
+such as information security, privacy, AI, software lifecycle, and accessibility.
+Each concern resolves to a curated set of anchor standards from the offline
+index; `--discover` broadens the set via catalog search. ISO standards address
+domains, not specific products, so recommendations are advisory starting points,
+not a compliance checklist.
+
+| Flag | Effect |
+|------|--------|
+| `--group-by component\|category\|ics` | How to group standards (default: `component`). |
+| `--category <name>` | Keep only groups/standards matching a category. |
+| `--component <name>` | Keep only standards driven by a matching component. |
+| `--discover` | Add related standards via catalog search (lower confidence). |
+| `--include-drafts` | Include drafts and withdrawn standards (default: current only). |
+| `--limit <n>` | Cap standards per group (0 = no limit). |
+| `--depth <n>` | Maximum directory depth to scan (default 6; 0 = unlimited). |
+| `--sort <key>` | Order within each group: relevance, reference, date, status. |
+| `--long`, `-l` | Wide listing with publication date and committee. |
+| `--json` | Machine-readable output. |
 
 ## Attribution
 
