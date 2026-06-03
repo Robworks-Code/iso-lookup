@@ -10,7 +10,9 @@ A CLI for looking up ISO security and standards documents.
 **Homebrew (macOS):**
 
 ```bash
-brew install Robworks-Code/tap/iso
+brew install robworks-code/tap/iso
+# or, after tapping once, just `brew install iso`:
+brew tap robworks-code/tap && brew install iso
 ```
 
 **Go (any platform, needs Go 1.25+):**
