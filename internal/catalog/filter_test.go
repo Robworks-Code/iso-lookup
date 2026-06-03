@@ -74,6 +74,38 @@ func TestFilterCombined(t *testing.T) {
 	}
 }
 
+func TestFilterCommitteeBoundary(t *testing.T) {
+	recs := []Record{
+		{Reference: "A", Committee: "ISO/TC 17 — Steel"},
+		{Reference: "B", Committee: "ISO/TC 176/SC 2 — Quality management"},
+	}
+	// "TC 17" must not match "TC 176" (trailing digit).
+	if g := (Filter{Committee: "TC 17"}).Apply(recs); len(g) != 1 || g[0].Reference != "A" {
+		t.Fatalf("'TC 17' should match only TC 17, not TC 176: %v", refsOf(g))
+	}
+	// Sub-committee substrings still work when the boundary is a non-digit.
+	if g := (Filter{Committee: "SC 2"}).Apply(recs); len(g) != 1 || g[0].Reference != "B" {
+		t.Fatalf("'SC 2' should match TC 176/SC 2: %v", refsOf(g))
+	}
+}
+
+func TestFilterYearBoundary(t *testing.T) {
+	recs := []Record{
+		{Reference: "X", PublishedDate: "2022-10-25"},
+		{Reference: "Y", PublishedDate: "2009-01-01"},
+	}
+	// Partial years must not match a longer year.
+	if g := (Filter{Year: "20"}).Apply(recs); len(g) != 0 {
+		t.Fatalf("partial year '20' should match nothing, got %v", refsOf(g))
+	}
+	if g := (Filter{Year: "202"}).Apply(recs); len(g) != 0 {
+		t.Fatalf("partial year '202' should match nothing, got %v", refsOf(g))
+	}
+	if g := (Filter{Year: "2022"}).Apply(recs); len(g) != 1 || g[0].Reference != "X" {
+		t.Fatalf("year '2022' failed: %v", refsOf(g))
+	}
+}
+
 func TestSortByReference(t *testing.T) {
 	recs := filterFixtures()
 	SortBy(recs, "reference")

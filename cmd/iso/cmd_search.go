@@ -58,18 +58,21 @@ output or --count to print just the number of matches.`,
 		}.Apply(res)
 		catalog.SortBy(res, searchSort)
 
+		// --count reports the total number of matches, before any --limit.
 		if searchCount {
 			fmt.Println(len(res))
 			return nil
 		}
-		if searchJSON {
-			return json.NewEncoder(os.Stdout).Encode(res)
-		}
 
+		// --limit caps the displayed/emitted results uniformly across output formats.
 		total := len(res)
 		if searchLimit > 0 && total > searchLimit {
 			res = res[:searchLimit]
 			fmt.Fprintf(os.Stderr, "(showing first %d of %d matches; use --limit 0 for all)\n", searchLimit, total)
+		}
+
+		if searchJSON {
+			return json.NewEncoder(os.Stdout).Encode(res)
 		}
 		if searchLong {
 			fmt.Print(render.SearchListLong(res))
