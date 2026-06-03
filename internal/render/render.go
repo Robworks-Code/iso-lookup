@@ -52,6 +52,27 @@ func SearchList(recs []catalog.Record) string {
 	return b.String()
 }
 
+// SearchListLong is like SearchList but adds publication date and committee
+// columns, for when the extra criteria help scan results.
+func SearchListLong(recs []catalog.Record) string {
+	if len(recs) == 0 {
+		return "No matches.\n"
+	}
+	var b strings.Builder
+	for _, r := range recs {
+		date := r.PublishedDate
+		if date == "" {
+			date = "—"
+		}
+		committee := r.Committee
+		if i := strings.Index(committee, " — "); i >= 0 {
+			committee = committee[:i] // drop the long descriptive name, keep the code
+		}
+		fmt.Fprintf(&b, "%-28s  %-11s  %-10s  %-22s  %s\n", r.Reference, r.Status, date, committee, r.Title)
+	}
+	return b.String()
+}
+
 func TOC(doc parse.Document) string {
 	var b strings.Builder
 	b.WriteString("\nContents:\n")

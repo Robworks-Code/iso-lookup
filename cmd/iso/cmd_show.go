@@ -18,7 +18,15 @@ var (
 var showCmd = &cobra.Command{
 	Use:   "show <reference>",
 	Short: "Show metadata up front, plus a table of contents if a local file exists",
-	Args:  cobra.ExactArgs(1),
+	Long: `Resolve a single standard and print its metadata (title, status, committee,
+ICS, scope, URL). A bare number resolves to the current published edition. If a
+local copy is configured, the table of contents is printed too; --interactive
+opens the chapter browser instead.`,
+	Example: `  iso show ISO/IEC 27001:2022
+  iso show 27001
+  iso show 9001 --json
+  iso show 27001 --interactive`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := loadCatalog()
 		if err != nil {

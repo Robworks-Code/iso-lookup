@@ -17,7 +17,14 @@ var noPager bool
 var chapterCmd = &cobra.Command{
 	Use:   "chapter <reference> <section>",
 	Short: "Print a single chapter/segment from the local file",
-	Args:  cobra.ExactArgs(2),
+	Long: `Print one section of a standard from your local copy. The section may be
+given by number (e.g. 5 or 6.1.2) or by exact title. Output is piped through
+the configured pager unless --no-pager is set. Run "iso show <ref>" to list the
+available sections.`,
+	Example: `  iso chapter 27001 5
+  iso chapter ISO/IEC 27001:2022 "Normative references"
+  iso chapter 27001 6.1.2 --no-pager`,
+	Args: cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ref, want := args[0], args[1]
 		c, err := loadCatalog()

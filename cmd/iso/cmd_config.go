@@ -10,6 +10,13 @@ import (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Show or set configuration (docs folder, index file, pager)",
+	Long: `Show the current configuration, or use a set-* subcommand to change it.
+Settings are stored in config.json under your config directory
+($XDG_CONFIG_HOME/iso-lookup or ~/.config/iso-lookup).`,
+	Example: `  iso config
+  iso config set-docs ~/standards
+  iso config set-index ~/standards/index.yaml
+  iso config set-pager "less -R"`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := config.Load()
 		if err != nil {
