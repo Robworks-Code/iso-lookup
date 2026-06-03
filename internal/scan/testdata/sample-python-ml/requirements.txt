@@ -1,0 +1,6 @@
+# ML service deps
+torch==2.2.0
+transformers>=4.38
+fastapi
+psycopg2-binary==2.9.9
+boto3

@@ -36,7 +36,8 @@ Standard body text is copyrighted and is only ever read from your own files.`,
   iso show 27001 --json
   iso chapter 27001 5
   iso browse 27001
-  iso open 9001`,
+  iso open 9001
+  iso scan ./my-project`,
 }
 
 func main() {
