@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Robworks-Code/iso-lookup/internal/scan"
+	"github.com/Robworks-Code/iso-lookup/internal/style"
 )
 
 // ScanStack renders just the detected stack: one line per component with its
@@ -13,10 +14,10 @@ func ScanStack(d scan.Detection) string {
 	var b strings.Builder
 	writeScanHeader(&b, d)
 	if len(d.Components) == 0 {
-		b.WriteString("\nNo recognizable components found.\n")
+		b.WriteString("\n" + style.Dim.Render("No recognizable components found.") + "\n")
 		return b.String()
 	}
-	b.WriteString("\nDetected stack:\n")
+	b.WriteString("\n" + style.SubHeader.Render("Detected stack:") + "\n")
 	writeComponents(&b, d.Components)
 	return b.String()
 }
@@ -30,14 +31,14 @@ func ScanReport(r scan.Report, long bool) string {
 	writeScanHeader(&b, det)
 
 	if len(r.Components) == 0 {
-		b.WriteString("\nNo recognizable components found.\n")
+		b.WriteString("\n" + style.Dim.Render("No recognizable components found.") + "\n")
 		return b.String()
 	}
-	b.WriteString("\nDetected stack:\n")
+	b.WriteString("\n" + style.SubHeader.Render("Detected stack:") + "\n")
 	writeComponents(&b, r.Components)
 
 	if len(r.Groups) == 0 {
-		b.WriteString("\nNo relevant standards matched. Try --discover for a broader set.\n")
+		b.WriteString("\n" + style.Dim.Render("No relevant standards matched. Try --discover for a broader set.") + "\n")
 		return b.String()
 	}
 
@@ -47,10 +48,11 @@ func ScanReport(r scan.Report, long bool) string {
 		writeGroup(&b, g, long)
 		stds += len(g.Recommendations)
 	}
-	fmt.Fprintf(&b, "\nSummary: %d %s → %d %s, %d %s grouped by %s.\n",
+	summary := fmt.Sprintf("Summary: %d %s → %d %s, %d %s grouped by %s.",
 		len(r.Components), plural(len(r.Components), "component"),
 		len(r.Groups), plural(len(r.Groups), "group"),
 		stds, plural(stds, "standard"), r.GroupBy)
+	b.WriteString("\n" + style.Summary.Render(summary) + "\n")
 	return b.String()
 }
 
@@ -63,64 +65,60 @@ func ScanWhy(g scan.Group, long bool) string {
 }
 
 func writeScanHeader(b *strings.Builder, d scan.Detection) {
-	fmt.Fprintf(b, "Scanned: %s", d.Root)
+	line := fmt.Sprintf("Scanned: %s", d.Root)
 	if d.FilesSeen > 0 {
-		fmt.Fprintf(b, "  (%d files, %d %s)", d.FilesSeen, len(d.Components), plural(len(d.Components), "component"))
+		line += style.Dim.Render(fmt.Sprintf("  (%d files, %d %s)", d.FilesSeen, len(d.Components), plural(len(d.Components), "component")))
 	}
-	b.WriteString("\n")
+	b.WriteString(style.Panel.Render(line) + "\n")
 	if d.Truncated {
-		b.WriteString("note: scan was truncated by a depth or file-count limit; some components may be missing.\n")
+		b.WriteString(style.Warn.Render("note: scan was truncated by a depth or file-count limit; some components may be missing.") + "\n")
 	}
 }
 
 func writeComponents(b *strings.Builder, comps []scan.Component) {
 	for _, c := range comps {
-		fmt.Fprintf(b, "  %-22s %s\n", c.Name, strings.Join(c.Evidence, ", "))
+		name := style.Pad(style.Header.Render(c.Name), style.NameW)
+		fmt.Fprintf(b, "  %s%s\n", name, style.Dim.Render(strings.Join(c.Evidence, ", ")))
 	}
 }
 
 func writeGroup(b *strings.Builder, g scan.Group, long bool) {
-	header := g.Header
+	header := style.SubHeader.Render(g.Header)
 	if g.Total > len(g.Recommendations) {
-		header = fmt.Sprintf("%s  (showing %d of %d)", header, len(g.Recommendations), g.Total)
+		header += style.Dim.Render(fmt.Sprintf("  (showing %d of %d)", len(g.Recommendations), g.Total))
 	}
 	b.WriteString(header + "\n")
 	if len(g.Recommendations) == 0 {
-		b.WriteString("  (no standards in the catalog yet)\n")
+		b.WriteString("  " + style.Dim.Render("(no standards in the catalog yet)") + "\n")
 	}
 	for _, rec := range g.Recommendations {
 		writeRecommendation(b, rec, long)
 	}
 	if len(g.Missing) > 0 {
-		fmt.Fprintf(b, "  not yet in catalog: %s\n", strings.Join(g.Missing, ", "))
+		fmt.Fprintf(b, "  %s\n", style.Dim.Render("not yet in catalog: "+strings.Join(g.Missing, ", ")))
 	}
 }
 
 func writeRecommendation(b *strings.Builder, rec scan.Recommendation, long bool) {
 	r := rec.Record
-	tag := ""
+	title := r.Title
 	if rec.Discovered {
-		tag = "  (discovered)"
+		title += style.Dim.Render("  (discovered)")
 	}
+	b.WriteString("  ")
+	b.WriteString(style.Pad(style.Ref.Render(r.Reference), style.RefW))
+	b.WriteString(style.Pad(style.Status(r.Status).Render(r.Status), style.StatusW))
 	if long {
-		date := r.PublishedDate
-		if date == "" {
-			date = "—"
-		}
-		committee := r.Committee
-		if i := strings.Index(committee, " — "); i >= 0 {
-			committee = committee[:i]
-		}
-		fmt.Fprintf(b, "  %-28s  %-11s  %-10s  %-22s  %s%s\n", r.Reference, r.Status, date, committee, r.Title, tag)
-	} else {
-		fmt.Fprintf(b, "  %-28s  %-11s  %s%s\n", r.Reference, r.Status, r.Title, tag)
+		b.WriteString(style.Pad(emDash(r.PublishedDate), style.DateW))
+		b.WriteString(style.Pad(style.Dim.Render(committeeCode(r.Committee)), style.CommitteeW))
 	}
+	b.WriteString(title + "\n")
 	if rec.Rationale != "" {
-		driven := ""
+		why := "why: " + rec.Rationale
 		if len(rec.Components) > 0 {
-			driven = "  [" + strings.Join(rec.Components, ", ") + "]"
+			why += "  [" + strings.Join(rec.Components, ", ") + "]"
 		}
-		fmt.Fprintf(b, "      why: %s%s\n", rec.Rationale, driven)
+		b.WriteString("      " + style.Rationale.Render(why) + "\n")
 	}
 }
 

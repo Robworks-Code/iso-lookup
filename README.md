@@ -11,8 +11,6 @@ A CLI for looking up ISO security and standards documents.
 
 ```bash
 brew install robworks-code/tap/iso
-# or, after tapping once, just `brew install iso`:
-brew tap robworks-code/tap && brew install iso
 ```
 
 **Go (any platform, needs Go 1.25+):**
@@ -21,18 +19,8 @@ brew tap robworks-code/tap && brew install iso
 go install github.com/Robworks-Code/iso-lookup/cmd/iso@latest
 ```
 
-**Prebuilt binaries:** download a tarball for your OS/arch from the
-[releases page](https://github.com/Robworks-Code/iso-lookup/releases) and put
-`iso` on your `PATH`.
-
-**From source:**
-
-```bash
-make install            # builds and installs into /usr/local/bin (override PREFIX=...)
-# or
-make build              # builds ./bin/iso
-go install ./cmd/iso    # installs into $(go env GOPATH)/bin
-```
+Prebuilt binaries, building from source, and verification are covered in
+[INSTALL.md](INSTALL.md). Release notes are in [CHANGELOG.md](CHANGELOG.md).
 
 ## Usage
 
@@ -60,6 +48,21 @@ entries:
 
 Point `iso` at your index file with `iso config set-index <path>`.
 
+## Color output
+
+Listings are color-coded for readability: references stand out, statuses are
+colored by state (green published, red withdrawn, yellow under review), and
+group headers, rationale, and evidence are visually distinct.
+
+Color is automatic - it turns off when output is piped or redirected, and honors
+the [`NO_COLOR`](https://no-color.org) convention. Two global flags override the
+auto-detection:
+
+| Flag | Effect |
+|------|--------|
+| `--no-color` | Disable color (also via `NO_COLOR=1`). |
+| `--color` | Force color even when piped (e.g. `iso scan . --color \| less -R`). |
+
 ## Scanning a project
 
 `iso scan` inspects a folder, detects its technology stack from marker files and
@@ -69,6 +72,7 @@ it finds — grouped into a report you can reshape.
 ```bash
 iso scan .                       # detect stack + recommend standards (current dir)
 iso scan ./service               # scan another folder
+iso scan . --interactive         # browse the report in an interactive TUI
 iso scan stack .                 # just the detected components, no recommendations
 iso scan why security .          # explain what drove a component/category/concern
 ```
@@ -92,6 +96,7 @@ not a compliance checklist.
 | `--depth <n>` | Maximum directory depth to scan (default 6; 0 = unlimited). |
 | `--sort <key>` | Order within each group: relevance, reference, date, status. |
 | `--long`, `-l` | Wide listing with publication date and committee. |
+| `--interactive`, `-i` | Browse the grouped report in a two-pane TUI (groups left, standards + rationale right; arrows/`j`/`k` to switch, `f`/`b` to scroll, `q` to quit). |
 | `--json` | Machine-readable output. |
 
 ## Attribution

@@ -9,20 +9,22 @@ import (
 	"github.com/Robworks-Code/iso-lookup/internal/catalog"
 	"github.com/Robworks-Code/iso-lookup/internal/render"
 	"github.com/Robworks-Code/iso-lookup/internal/scan"
+	"github.com/Robworks-Code/iso-lookup/internal/tui"
 	"github.com/spf13/cobra"
 )
 
 var (
-	scanJSON     bool
-	scanLong     bool
-	scanGroupBy  string
-	scanCategory string
-	scanComp     string
-	scanDiscover bool
-	scanDrafts   bool
-	scanLimit    int
-	scanDepth    int
-	scanSort     string
+	scanJSON        bool
+	scanLong        bool
+	scanGroupBy     string
+	scanCategory    string
+	scanComp        string
+	scanDiscover    bool
+	scanDrafts      bool
+	scanLimit       int
+	scanDepth       int
+	scanSort        string
+	scanInteractive bool
 )
 
 var scanCmd = &cobra.Command{
@@ -53,6 +55,13 @@ advisory starting points, not a compliance checklist.`,
 		}
 		if scanJSON {
 			return json.NewEncoder(os.Stdout).Encode(rep)
+		}
+		if scanInteractive {
+			if len(rep.Groups) == 0 {
+				fmt.Print(render.ScanReport(rep, scanLong))
+				return nil
+			}
+			return tui.RunScan(rep)
 		}
 		noteTruncatedGroups(rep)
 		fmt.Print(render.ScanReport(rep, scanLong))
@@ -235,6 +244,7 @@ func init() {
 	f.IntVarP(&scanLimit, "limit", "n", 0, "maximum standards per group (0 = no limit)")
 	f.IntVar(&scanDepth, "depth", 6, "maximum directory depth to scan (0 = unlimited)")
 	f.StringVar(&scanSort, "sort", "relevance", "sort within each group: "+strings.Join(catalog.SortKeys, ", "))
+	scanCmd.Flags().BoolVarP(&scanInteractive, "interactive", "i", false, "browse the report in an interactive TUI")
 
 	scanCmd.AddCommand(scanStackCmd, scanWhyCmd)
 	rootCmd.AddCommand(scanCmd)
