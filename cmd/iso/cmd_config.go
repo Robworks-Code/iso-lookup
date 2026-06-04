@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/Robworks-Code/iso-lookup/internal/config"
+	"github.com/Robworks-Code/iso-lookup/internal/render"
+	"github.com/Robworks-Code/iso-lookup/internal/style"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +24,7 @@ Settings are stored in config.json under your config directory
 		if err != nil {
 			return err
 		}
-		fmt.Printf("docs_dir:   %s\nindex_file: %s\npager:      %s\n", c.DocsDir, c.IndexFile, c.Pager)
+		fmt.Print(render.Config(c))
 		return nil
 	},
 }
@@ -37,7 +39,11 @@ var configSetDocs = &cobra.Command{
 			return err
 		}
 		c.DocsDir = args[0]
-		return config.Save(c)
+		if err := config.Save(c); err != nil {
+			return err
+		}
+		fmt.Println(style.Summary.Render("Set docs folder: " + args[0]))
+		return nil
 	},
 }
 
@@ -51,7 +57,11 @@ var configSetIndex = &cobra.Command{
 			return err
 		}
 		c.IndexFile = args[0]
-		return config.Save(c)
+		if err := config.Save(c); err != nil {
+			return err
+		}
+		fmt.Println(style.Summary.Render("Set index file: " + args[0]))
+		return nil
 	},
 }
 
@@ -65,7 +75,11 @@ var configSetPager = &cobra.Command{
 			return err
 		}
 		c.Pager = args[0]
-		return config.Save(c)
+		if err := config.Save(c); err != nil {
+			return err
+		}
+		fmt.Println(style.Summary.Render("Set pager: " + args[0]))
+		return nil
 	},
 }
 
