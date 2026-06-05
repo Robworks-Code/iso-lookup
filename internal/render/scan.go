@@ -119,7 +119,8 @@ func writeComponents(b *strings.Builder, comps []scan.Component) {
 // writeGroup renders one group: a header (annotated with the driving components
 // unless we're already grouping by component), the distinct rationales stated
 // once, then each standard on a confidence-marked line. groupBy is the report's
-// grouping ("" for `scan why`, which never annotates the header).
+// grouping; it is "" for `scan why`, which annotates like any non-component
+// grouping (the header is a category/component the driver names still inform).
 func writeGroup(b *strings.Builder, g scan.Group, long bool, groupBy string) {
 	header := style.SubHeader.Render(g.Header)
 	if groupBy != scan.GroupByComponent {

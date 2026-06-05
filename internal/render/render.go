@@ -153,10 +153,10 @@ func TOC(doc parse.Document) string {
 // one that has been superseded or withdrawn. It returns "" for current ones.
 func lifecycleCaveat(r catalog.Record) string {
 	if r.ReplacedBy != "" {
-		return "⚠ Superseded by " + r.ReplacedBy + " — prefer that edition."
+		return "⚠ Superseded by " + r.ReplacedBy + " - prefer that edition."
 	}
 	if strings.Contains(strings.ToLower(r.Status), "withdrawn") {
-		return "⚠ Withdrawn — kept for reference, not current."
+		return "⚠ Withdrawn - kept for reference, not current."
 	}
 	return ""
 }
