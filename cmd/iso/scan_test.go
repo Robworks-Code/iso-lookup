@@ -33,7 +33,7 @@ func TestScanCommandWiring(t *testing.T) {
 	if scanCmd.PersistentFlags().Lookup("group-by") == nil {
 		t.Error("scan missing --group-by flag")
 	}
-	if f := scanCmd.PersistentFlags().Lookup("group-by"); f != nil && f.DefValue != "component" {
-		t.Errorf("--group-by default = %q, want component", f.DefValue)
+	if f := scanCmd.PersistentFlags().Lookup("group-by"); f != nil && f.DefValue != "category" {
+		t.Errorf("--group-by default = %q, want category", f.DefValue)
 	}
 }

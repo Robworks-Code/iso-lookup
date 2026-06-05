@@ -45,10 +45,11 @@ func ScanReport(r scan.Report, long bool) string {
 	stds := 0
 	for _, g := range r.Groups {
 		b.WriteString("\n")
-		writeGroup(&b, g, long)
+		writeGroup(&b, g, long, r.GroupBy)
 		stds += len(g.Recommendations)
 	}
-	summary := fmt.Sprintf("Summary: %d %s → %d %s, %d %s grouped by %s.",
+	writeStartHere(&b, r)
+	summary := fmt.Sprintf("Summary: %d %s → %d %s, %d %s grouped by %s. Advisory starting points, not a compliance checklist.",
 		len(r.Components), plural(len(r.Components), "component"),
 		len(r.Groups), plural(len(r.Groups), "group"),
 		stds, plural(stds, "standard"), r.GroupBy)
@@ -56,11 +57,44 @@ func ScanReport(r scan.Report, long bool) string {
 	return b.String()
 }
 
+// writeStartHere prints a short, prioritized list of next actions: the
+// highest-confidence published, curated (non-discovered) standards across all
+// groups, deduped by reference, each as a runnable `iso show` command.
+func writeStartHere(b *strings.Builder, r scan.Report) {
+	const maxStartHere = 5
+	var picks []scan.Recommendation
+	seen := map[string]bool{}
+	for _, want := range []scan.Confidence{scan.High, scan.Medium, scan.Low} {
+		for _, g := range r.Groups {
+			for _, rec := range g.Recommendations {
+				if rec.Confidence != want || rec.Discovered || seen[rec.Record.Reference] {
+					continue
+				}
+				if !strings.Contains(strings.ToLower(rec.Record.Status), "published") {
+					continue
+				}
+				seen[rec.Record.Reference] = true
+				picks = append(picks, rec)
+			}
+		}
+	}
+	if len(picks) == 0 {
+		return
+	}
+	if len(picks) > maxStartHere {
+		picks = picks[:maxStartHere]
+	}
+	b.WriteString("\n" + style.SubHeader.Render("Start here") + "\n")
+	for _, rec := range picks {
+		fmt.Fprintf(b, "  %s\n", style.Ref.Render("iso show "+rec.Record.Reference))
+	}
+}
+
 // ScanWhy renders a single group with full rationale and evidence, for the
 // `scan why` subcommand.
 func ScanWhy(g scan.Group, long bool) string {
 	var b strings.Builder
-	writeGroup(&b, g, long)
+	writeGroup(&b, g, long, "")
 	return b.String()
 }
 
@@ -82,12 +116,24 @@ func writeComponents(b *strings.Builder, comps []scan.Component) {
 	}
 }
 
-func writeGroup(b *strings.Builder, g scan.Group, long bool) {
+// writeGroup renders one group: a header (annotated with the driving components
+// unless we're already grouping by component), the distinct rationales stated
+// once, then each standard on a confidence-marked line. groupBy is the report's
+// grouping ("" for `scan why`, which never annotates the header).
+func writeGroup(b *strings.Builder, g scan.Group, long bool, groupBy string) {
 	header := style.SubHeader.Render(g.Header)
+	if groupBy != scan.GroupByComponent {
+		if drivers := groupDrivers(g); drivers != "" {
+			header += style.Dim.Render("  from " + drivers)
+		}
+	}
 	if g.Total > len(g.Recommendations) {
 		header += style.Dim.Render(fmt.Sprintf("  (showing %d of %d)", len(g.Recommendations), g.Total))
 	}
 	b.WriteString(header + "\n")
+	for _, why := range groupRationales(g) {
+		b.WriteString("  " + style.Rationale.Render("why  "+why) + "\n")
+	}
 	if len(g.Recommendations) == 0 {
 		b.WriteString("  " + style.Dim.Render("(no standards in the catalog yet)") + "\n")
 	}
@@ -99,13 +145,48 @@ func writeGroup(b *strings.Builder, g scan.Group, long bool) {
 	}
 }
 
+// groupDrivers is the comma-joined union of the components behind a group's
+// recommendations, in first-seen order, for the dim "from …" header annotation.
+func groupDrivers(g scan.Group) string {
+	var drivers []string
+	seen := map[string]bool{}
+	for _, rec := range g.Recommendations {
+		for _, c := range rec.Components {
+			if !seen[c] {
+				seen[c] = true
+				drivers = append(drivers, c)
+			}
+		}
+	}
+	return strings.Join(drivers, ", ")
+}
+
+// groupRationales returns the distinct rationales across a group's
+// recommendations, in first-seen order, so a shared "why" is stated once
+// instead of repeated on every standard line.
+func groupRationales(g scan.Group) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, rec := range g.Recommendations {
+		if rec.Rationale == "" || seen[rec.Rationale] {
+			continue
+		}
+		seen[rec.Rationale] = true
+		out = append(out, rec.Rationale)
+	}
+	return out
+}
+
 func writeRecommendation(b *strings.Builder, rec scan.Recommendation, long bool) {
 	r := rec.Record
 	title := r.Title
+	if !long {
+		title = shortTitle(title)
+	}
 	if rec.Discovered {
 		title += style.Dim.Render("  (discovered)")
 	}
-	b.WriteString("  ")
+	b.WriteString("  " + confidenceMark(rec.Confidence) + " ")
 	b.WriteString(style.Pad(style.Ref.Render(r.Reference), style.RefW))
 	b.WriteString(style.Pad(style.Status(r.Status).Render(r.Status), style.StatusW))
 	if long {
@@ -113,13 +194,19 @@ func writeRecommendation(b *strings.Builder, rec scan.Recommendation, long bool)
 		b.WriteString(style.Pad(style.Dim.Render(committeeCode(r.Committee)), style.CommitteeW))
 	}
 	b.WriteString(title + "\n")
-	if rec.Rationale != "" {
-		why := "why: " + rec.Rationale
-		if len(rec.Components) > 0 {
-			why += "  [" + strings.Join(rec.Components, ", ") + "]"
-		}
-		b.WriteString("      " + style.Rationale.Render(why) + "\n")
+}
+
+// confidenceMark returns a filled/half/open dot colored by confidence. The
+// glyphs differ by fill, so the signal survives --no-color and Ascii mode.
+func confidenceMark(c scan.Confidence) string {
+	glyph := "○"
+	switch c {
+	case scan.High:
+		glyph = "●"
+	case scan.Medium:
+		glyph = "◐"
 	}
+	return style.Confidence(c.String()).Render(glyph)
 }
 
 func plural(n int, word string) string {

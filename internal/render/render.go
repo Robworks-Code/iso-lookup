@@ -17,7 +17,11 @@ const scopeWidth = 96
 
 func Summary(r catalog.Record) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "%s\n%s\n\n", style.Ref.Render(r.Reference), style.Header.Render(r.Title))
+	fmt.Fprintf(&b, "%s\n%s\n", style.Ref.Render(r.Reference), style.Header.Render(r.Title))
+	if caveat := lifecycleCaveat(r); caveat != "" {
+		b.WriteString(style.Warn.Render(caveat) + "\n")
+	}
+	b.WriteString("\n")
 	writeField(&b, "Status:", style.Status(r.Status).Render(r.Status))
 	if r.PublishedDate != "" {
 		date := r.PublishedDate
@@ -85,6 +89,35 @@ func SearchListLong(recs []catalog.Record) string {
 	return b.String()
 }
 
+// titleBoilerplate lists the generic ISO domain prefixes that lead many titles
+// and carry no distinguishing information in a scan listing.
+var titleBoilerplate = []string{
+	"Information technology",
+	"Information security, cybersecurity and privacy protection",
+	"Information security",
+	"Systems and software engineering",
+	"Software and systems engineering",
+}
+
+// shortTitleMax caps a shortened title's visible width before eliding.
+const shortTitleMax = 64
+
+// shortTitle trims a leading generic ISO domain prefix (up to the first " — ")
+// and elides anything past shortTitleMax, for the compact scan listing. The full
+// title is preserved in --long output and `iso show`.
+func shortTitle(t string) string {
+	for _, prefix := range titleBoilerplate {
+		if rest, ok := strings.CutPrefix(t, prefix+" — "); ok {
+			t = rest
+			break
+		}
+	}
+	if r := []rune(t); len(r) > shortTitleMax {
+		t = strings.TrimRight(string(r[:shortTitleMax-1]), " ") + "…"
+	}
+	return t
+}
+
 // committeeCode keeps only the committee code, dropping the long descriptive
 // name after the em-dash separator.
 func committeeCode(committee string) string {
@@ -116,10 +149,30 @@ func TOC(doc parse.Document) string {
 	return b.String()
 }
 
-func NoLocalFile(r catalog.Record) string {
-	return "\n" + style.Dim.Render("Full text not available locally — run ") +
-		style.Ref.Render("iso open "+r.Reference) +
-		style.Dim.Render(" for the official page,\nor add a local copy to your docs folder.") + "\n"
+// lifecycleCaveat flags a standard the reader probably should not cite as-is:
+// one that has been superseded or withdrawn. It returns "" for current ones.
+func lifecycleCaveat(r catalog.Record) string {
+	if r.ReplacedBy != "" {
+		return "⚠ Superseded by " + r.ReplacedBy + " — prefer that edition."
+	}
+	if strings.Contains(strings.ToLower(r.Status), "withdrawn") {
+		return "⚠ Withdrawn — kept for reference, not current."
+	}
+	return ""
+}
+
+// Actions renders the copy-pasteable next steps for a standard. With a local
+// copy it leads with browsing; without one it notes the text is remote and
+// points at `iso open` for the official page.
+func Actions(r catalog.Record, hasLocal bool) string {
+	if hasLocal {
+		return "\n" + style.Dim.Render("Next →  ") +
+			style.Ref.Render("iso browse "+r.Reference) +
+			style.Dim.Render("  ·  ") + style.Ref.Render("iso open "+r.Reference) + "\n"
+	}
+	return "\n" + style.Dim.Render("Full text not available locally.") + "\n" +
+		style.Dim.Render("Next →  ") + style.Ref.Render("iso open "+r.Reference) +
+		style.Dim.Render("  for the official page, or add a local copy to your docs folder.") + "\n"
 }
 
 func Chapter(s parse.Section) string {

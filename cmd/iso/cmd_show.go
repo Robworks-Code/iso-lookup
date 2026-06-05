@@ -49,7 +49,7 @@ opens the chapter browser instead.`,
 		}
 		path, ok := lib.Find(rec.Reference)
 		if !ok {
-			fmt.Print(render.NoLocalFile(rec))
+			fmt.Print(render.Actions(rec, false))
 			return nil
 		}
 		doc, err := parse.Parse(path)
@@ -61,6 +61,7 @@ opens the chapter browser instead.`,
 			return runTUI(rec, doc)
 		}
 		fmt.Print(render.TOC(doc))
+		fmt.Print(render.Actions(rec, true))
 		return nil
 	},
 }
