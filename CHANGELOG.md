@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-05
+
+### Added
+- `scan` recommendations now lead with a confidence marker (`●` high / `◐`
+  medium / `○` low) so the most relevant standards stand out at a glance; the
+  markers stay distinguishable under `--no-color` because they differ by fill.
+- `scan` prints a "Start here" block listing the top published, curated
+  standards as ready-to-run `iso show <ref>` commands.
+- `show` flags superseded or withdrawn standards with a caveat banner, and
+  prints a copy-pasteable `Next →` action line (`iso browse` / `iso open`).
+
+### Changed
+- `scan` now groups by category by default (was component), deduplicating
+  standards across components and reading as concern domains; `--group-by
+  component|ics` remain available.
+- `scan` states each rationale once per group instead of repeating it on every
+  standard line, recovers the driving components in a dim `from …` header
+  annotation, and shortens long ISO titles in the default view (full titles
+  retained under `--long`).
+
 ## [0.3.0] - 2026-06-04
 
 ### Added
