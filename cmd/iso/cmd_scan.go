@@ -236,7 +236,7 @@ func init() {
 	f := scanCmd.PersistentFlags()
 	f.BoolVar(&scanJSON, "json", false, "output as JSON")
 	f.BoolVarP(&scanLong, "long", "l", false, "wide listing with date and committee columns")
-	f.StringVar(&scanGroupBy, "group-by", scan.GroupByComponent, "group standards by: "+strings.Join(scan.GroupByKeys, ", "))
+	f.StringVar(&scanGroupBy, "group-by", scan.GroupByCategory, "group standards by: "+strings.Join(scan.GroupByKeys, ", "))
 	f.StringVar(&scanCategory, "category", "", "keep only groups/standards matching this category (substring)")
 	f.StringVar(&scanComp, "component", "", "keep only standards driven by a matching component (substring)")
 	f.BoolVar(&scanDiscover, "discover", false, "broaden recommendations via catalog search (lower confidence)")

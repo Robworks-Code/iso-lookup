@@ -31,10 +31,35 @@ func sampleScanReport() scan.Report {
 
 func TestScanReportContainsKeyParts(t *testing.T) {
 	out := ScanReport(sampleScanReport(), false)
-	for _, want := range []string{"Scanned: /proj", "Detected stack:", "OpenAI SDK", "ISO/IEC 42001:2023", "why:", "Summary:"} {
+	for _, want := range []string{"Scanned: /proj", "Detected stack:", "OpenAI SDK", "ISO/IEC 42001:2023", "why", "Start here", "iso show ISO/IEC 42001:2023", "Summary:"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("report missing %q\n---\n%s", want, out)
 		}
+	}
+}
+
+// The rationale is stated once per group, not repeated on every standard line.
+func TestScanReportRationaleStatedOnce(t *testing.T) {
+	rep := sampleScanReport()
+	g := &rep.Groups[0]
+	g.Recommendations = append(g.Recommendations, scan.Recommendation{
+		Record:     catalog.Record{Reference: "ISO/IEC 22989:2022", Title: "AI concepts and terminology", Status: "Published"},
+		Components: []string{"OpenAI SDK"},
+		Rationale:  g.Recommendations[0].Rationale,
+		Confidence: scan.Medium,
+	})
+	g.Total = len(g.Recommendations)
+	out := ScanReport(rep, false)
+	if n := strings.Count(out, "ML dependencies bring AI standards into scope."); n != 1 {
+		t.Errorf("shared rationale should appear once, appeared %d times\n---\n%s", n, out)
+	}
+}
+
+// A confidence marker leads each recommendation line.
+func TestScanReportShowsConfidenceMarker(t *testing.T) {
+	out := ScanReport(sampleScanReport(), false)
+	if !strings.Contains(out, "●") {
+		t.Errorf("high-confidence recommendation should carry a filled marker\n---\n%s", out)
 	}
 }
 
